@@ -1,0 +1,35 @@
+name: Build placeholder APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: Build, align and sign
+        run: |
+          set -e
+          BT="$ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | sort -V | tail -1)"
+          PLATFORM="$ANDROID_HOME/platforms/$(ls $ANDROID_HOME/platforms | sort -V | tail -1)/android.jar"
+
+          keytool -genkeypair -keystore tmp.jks -alias key \
+            -keyalg RSA -keysize 2048 -validity 36500 \
+            -storepass placeholder -keypass placeholder \
+            -dname "CN=placeholder"
+
+          for pkg in com.google.android.contactkeys com.google.android.safetycore; do
+            $BT/aapt2 link -o "$pkg.unsigned.apk" -I "$PLATFORM" \
+              --manifest "$pkg/AndroidManifest.xml"
+            $BT/zipalign -f -p 4 "$pkg.unsigned.apk" "$pkg.aligned.apk"
+            $BT/apksigner sign --ks tmp.jks --ks-pass pass:placeholder \
+              --out "$pkg.apk" "$pkg.aligned.apk"
+            rm -f "$pkg.unsigned.apk" "$pkg.aligned.apk" "$pkg.apk.idsig"
+          done
+
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: placeholder_apks
+          path: "*.apk"
