@@ -20,7 +20,7 @@ jobs:
             -storepass placeholder -keypass placeholder \
             -dname "CN=placeholder"
 
-          for pkg in com.google.android.contactkeys com.google.android.safetycore; do
+          for pkg in com.google.android.contactkeys com.google.android.safetycore com.google.android.verifier; do
             $BT/aapt2 link -o "$pkg.unsigned.apk" -I "$PLATFORM" \
               --manifest "$pkg/AndroidManifest.xml"
             $BT/zipalign -f -p 4 "$pkg.unsigned.apk" "$pkg.aligned.apk"
